@@ -58,14 +58,15 @@ func main() {
 			projection.Zoom(scale)
 		})
 
-		camera := mgl32.LookAtV(
+		camera := CCamera(
+			program.GetUniformLocation("camera"),
+		)
+
+		camera.LookAtV(
 			mgl32.Vec3{3, 3, 3},
 			mgl32.Vec3{0, 0, 0},
 			mgl32.Vec3{0, 1, 0},
 		)
-
-		cameraUniform := program.GetUniformLocation("camera")
-		cameraUniform.UniformMatrix4fv(1, false, &camera[0])
 
 		model := mgl32.Ident4()
 		var modelYaw, modelPitch float32
