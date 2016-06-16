@@ -254,6 +254,10 @@ func (w *Window) Run() {
 	}
 }
 
+func (w *Window) Aspect() float32 {
+	return float32(w.Width) / float32(w.Height)
+}
+
 func (w *Window) OnKey(
 	cbs ...glfw.KeyCallback,
 ) {

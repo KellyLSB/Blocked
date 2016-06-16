@@ -37,9 +37,8 @@ func main() {
 
 		// Projection set perspective
 		projection.Perspective(
-			45.0, float32(
-				window.Width/window.Height,
-			), 0.1, 100.0,
+			45.0, window.Aspect(),
+			0.1, 100.0,
 		)
 
 		// Projection zoom on scroll
