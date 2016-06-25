@@ -1,18 +1,32 @@
 package main
 
-import "github.com/go-gl/mathgl/mgl32"
+import (
+	"fmt"
+
+	"github.com/go-gl/mathgl/mgl32"
+)
 
 // Projection is a helper object
 // to interact with a projection uniform.
 type Projection struct {
-	Location
-	m4 mgl32.Mat4
+	Object
 }
 
 // CProjection
 // Cast a Location into a Projection utility object.
-func CProjection(location Location) *Projection {
-	return &Projection{Location: location}
+func CProjection(location interface{}) *Projection {
+	switch location := location.(type) {
+	case *Object:
+		return &Projection{*location}
+	case Object:
+		return &Projection{location}
+	case Location:
+		return &Projection{*CObject(location)}
+	default:
+		panic(fmt.Errorf(
+			"Bad type passed %# v; expected Location or Object", location,
+		))
+	}
 }
 
 // Perspective
@@ -25,12 +39,12 @@ func CProjection(location Location) *Projection {
 func (p *Projection) Perspective(
 	degree, aspect, near, far float32,
 ) {
-	p.m4 = mgl32.Perspective(
+	p.Set4(mgl32.Perspective(
 		mgl32.DegToRad(degree),
 		aspect, near, far,
-	)
+	))
 
-	p.UniformMatrix4fv(1, false)
+	p.Render(true)
 }
 
 // Zoom
@@ -38,24 +52,9 @@ func (p *Projection) Perspective(
 // on the projection; this provides
 // an efficiency boost then moving the camera.
 func (p *Projection) Zoom(scale float32) {
-	// @TODO Will the third and fourth
-	// following the decreasing linear
-	// series of changes provide a better render?
-	p.m4.Set(0, 0, p.m4.At(0, 0)*scale)
-	p.m4.Set(1, 1, p.m4.At(1, 1)*scale)
-
-	p.UniformMatrix4fv(1, false)
-}
-
-// UniformMatrix4fv
-// Performs the same as
-// *Location.UniformMatrix4fv(); except
-// this one already applies the
-// projection model for you.
-func (p *Projection) UniformMatrix4fv(
-	count int32, transpose bool,
-) {
-	p.Location.UniformMatrix4fv(
-		count, transpose, &p.m4[0],
-	)
+	p.M4.Set(0, 0, p.M4.At(0, 0)*scale)
+	p.M4.Set(1, 1, p.M4.At(1, 1)*scale)
+	p.M4.Set(2, 2, p.M4.At(2, 2)*scale)
+	p.M4.Set(3, 3, p.M4.At(3, 3)*scale)
+	p.Render(true)
 }

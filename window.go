@@ -254,8 +254,17 @@ func (w *Window) Run() {
 	}
 }
 
+// Aspect
+// Provides the computed window aspect ratio.
 func (w *Window) Aspect() float32 {
 	return float32(w.Width) / float32(w.Height)
+}
+
+// Middle
+// Provides the X, Y coordinates to the
+// center of window; relative to the window.
+func (w *Window) Middle() (x, y float64) {
+	return float64(w.Width >> 1), float64(w.Height >> 1)
 }
 
 func (w *Window) OnKey(
@@ -375,4 +384,8 @@ func (w *Window) callDraw(window *glfw.Window) {
 	for _, cb := range w.callbacks.draw {
 		cb(window)
 	}
+}
+
+func (w *Window) NewWindowProgram(shaders ...Shader) *WindowProgram {
+	return NewWindowProgram(w, shaders...)
 }

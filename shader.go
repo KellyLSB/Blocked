@@ -2,12 +2,12 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
 	"strings"
+	"unsafe"
 
 	"github.com/go-gl/gl/v4.5-core/gl"
 )
-
-type Shader uint32
 
 func glStr(str string, fn func(str **uint8)) {
 	cstr, free := gl.Strs(str)
@@ -15,28 +15,48 @@ func glStr(str string, fn func(str **uint8)) {
 	fn(cstr)
 }
 
-func CompileShader(
-	shaderType uint32,
-	source string,
-) (s Shader) {
-	s = Shader(gl.CreateShader(shaderType))
-	s.Source(source)
-	s.Compile()
-	return
+type ShaderType uint32
+
+const (
+	VertexShader                ShaderType = gl.VERTEX_SHADER
+	TesselationControlShader    ShaderType = gl.TESS_CONTROL_SHADER
+	TesselationEvaluationShader ShaderType = gl.TESS_EVALUATION_SHADER
+	GeometryShader              ShaderType = gl.GEOMETRY_SHADER
+	FragmentShader              ShaderType = gl.FRAGMENT_SHADER
+	ComputeShader               ShaderType = gl.COMPUTE_SHADER
+)
+
+type Shader uint32
+
+func NewShader(typ ShaderType) (s Shader) {
+	return Shader(gl.CreateShader(uint32(typ)))
 }
 
-func (s Shader) Compile() {
+func (s Shader) Source(source string) Shader {
+	glStr(source, func(source **uint8) {
+		gl.ShaderSource(uint32(s), 1, source, nil)
+	})
+
+	return s
+}
+
+func (s Shader) SourceFile(file string) Shader {
+	byt, err := ioutil.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+
+	return s.Source(*(*string)(unsafe.Pointer(&byt)))
+}
+
+func (s Shader) Compile() Shader {
 	gl.CompileShader(uint32(s))
 
 	if !s.CompileStatus() {
 		panic(errors.New(s.InfoLog()))
 	}
-}
 
-func (s Shader) Source(source string) {
-	glStr(source, func(source **uint8) {
-		gl.ShaderSource(uint32(s), 1, source, nil)
-	})
+	return s
 }
 
 func (s Shader) IV(pname uint32) (value int32) {

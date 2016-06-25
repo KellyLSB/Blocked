@@ -1,0 +1,3 @@
+[submodule "mesa"]
+	path = src/mesa
+	url = git://anongit.freedesktop.org/git/mesa/mesa

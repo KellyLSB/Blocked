@@ -24,16 +24,16 @@ func main() {
 	window := NewWindow("Block", windowWidth, windowHeight, false, true, true)
 
 	window.OnRun(func(_ *glfw.Window) {
+
 		// Configure the vertex and fragment shaders
-		vShader := CompileShader(gl.VERTEX_SHADER, vertexShader)
-		fShader := CompileShader(gl.FRAGMENT_SHADER, fragmentShader)
-		program := NewProgram(vShader, fShader)
-		program.Use()
+		vShader := NewShader(VertexShader).Source(vertexShader).Compile()
+		fShader := NewShader(FragmentShader).Source(fragmentShader).Compile()
+		program := window.NewWindowProgram(vShader, fShader).Use()
 
 		// Projection load uniform
-		projection := CProjection(
-			program.GetUniformLocation("projection"),
-		)
+		projection := CProjection(program.GetUniformObject("projection"))
+
+		fmt.Printf("%+v\n", projection)
 
 		// Projection set perspective
 		projection.Perspective(
@@ -67,27 +67,25 @@ func main() {
 			mgl32.Vec3{0, 1, 0},
 		)
 
-		model := mgl32.Ident4()
-		var modelYaw, modelPitch float32
-		modelUniform := program.GetUniformLocation("model")
-		modelUniform.UniformMatrix4fv(1, false, &model[0])
+		model := CModel(
+			program.GetUniformLocation("model"),
+		)
+
+		model.Ident4()
 
 		window.OnCursorPos(func(_ *glfw.Window, xpos, ypos float64) {
 			if window.Mouse.IsDown(MouseButtonRight) {
-				midx := float64(window.Width >> 1)
-				midy := float64(window.Height >> 1)
+				midx, midy := window.Middle()
 
 				if midx == xpos && midy == ypos {
 					return
 				}
 
 				window.SetCursorPos(midx, midy)
-				modelYaw += float32((midx-xpos)/1000) * 2
-				modelPitch += float32((midy-ypos)/1000) * 2
 
-				model = mgl32.HomogRotate3D(modelYaw, mgl32.Vec3{0, 1, 0}).
-					Mul4(mgl32.HomogRotate3D(modelPitch, mgl32.Vec3{0, 0, 1}))
-				modelUniform.UniformMatrix4fv(1, false, &model[0])
+				model.IncPitch(float32((midy-ypos)/1000) * 0.03)
+				model.IncYaw(float32((midx-xpos)/1000) * 0.03 * -1)
+				model.Render(true)
 			}
 		})
 
